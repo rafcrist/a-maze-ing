@@ -30,3 +30,11 @@ class MazeGenerator:
             cell = self.grid[y][x]
             return (cell)
         raise ValueError("Invalid cell.")
+
+    def has_wall(self, x: int, y: int, wall: int) -> bool:
+        """Verify whether a specific wall exists in the cell."""
+        cell = self.get_cell(x, y)
+        result = cell & wall
+        if (result):
+            return (True)
+        return (False)
