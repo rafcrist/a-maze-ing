@@ -1,8 +1,0 @@
-# Ficheiro de teste
-WIDTH = -1
-HEIGHT = 10
-ENTRY = 0,0
-EXIT = 14,9
-OUTPUT_FILE = out.txt
-PERFECT = True
-SEED = 42
