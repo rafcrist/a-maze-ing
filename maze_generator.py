@@ -1,3 +1,4 @@
+import random
 
 
 class MazeGenerator:
@@ -9,10 +10,12 @@ class MazeGenerator:
     WEST = 8
     ALL_WALLS = NORTH | EAST | SOUTH | WEST
 
-    def __init__(self, width: int, height: int) -> None:
+    def __init__(self, width: int, height: int,
+                 seed: int | None = None) -> None:
         """Initialize the maze with width, height, and all walls closed."""
         self.width = width
         self.height = height
+        self.rng = random.Random(seed)
 
         self.grid: list[list[int]] = []
         for _ in range(self.height):
@@ -79,3 +82,81 @@ class MazeGenerator:
             ny = y + 1
             if (self.is_valid_position(nx, ny)):
                 self.grid[ny][nx] = self.grid[ny][nx] & ~self.NORTH
+
+    def generate(self) -> None:
+        visited = {(0, 0)}
+        stack = [(0, 0)]
+
+        while (stack):
+            x, y = stack[-1]
+            neighbors = []
+
+            # East
+            nx = x + 1
+            ny = y
+            if (self.is_valid_position(nx, ny)
+               and (nx, ny) not in visited):
+                neighbors.append((nx, ny))
+
+            # West
+            nx = x - 1
+            ny = y
+            if (self.is_valid_position(nx, ny)
+               and (nx, ny) not in visited):
+                neighbors.append((nx, ny))
+
+            # North
+            nx = x
+            ny = y - 1
+            if (self.is_valid_position(nx, ny)
+               and (nx, ny) not in visited):
+                neighbors.append((nx, ny))
+
+            # South
+            nx = x
+            ny = y + 1
+            if (self.is_valid_position(nx, ny)
+               and (nx, ny) not in visited):
+                neighbors.append((nx, ny))
+
+            if (neighbors):
+                next_cell = self.rng.choice(neighbors)
+                nx, ny = next_cell
+                visited.add(next_cell)
+                stack.append(next_cell)
+                if (nx == x + 1):
+                    self.remove_wall(x, y, self.EAST)
+                elif (nx == x - 1):
+                    self.remove_wall(x, y, self.WEST)
+                elif (ny == y + 1):
+                    self.remove_wall(x, y, self.SOUTH)
+                elif (ny == y - 1):
+                    self.remove_wall(x, y, self.NORTH)
+            else:
+                stack.pop()
+
+    def display(self) -> None:
+        """Display the maze using ASCII characters."""
+        for y in range(self.height):
+            top = ""
+            for x in range(self.width):
+                if self.has_wall(x, y, self.NORTH):
+                    top += "+---"
+                else:
+                    top += "+   "
+            print(top + "+")
+
+            side = ""
+            for x in range(self.width):
+                if self.has_wall(x, y, self.WEST):
+                    side += "|   "
+                else:
+                    side += "    "
+
+            print(side + "|")
+        print("+" + "---+" * self.width)
+
+if __name__ == "__main__":
+    maze = MazeGenerator(10, 10, seed=100)
+    maze.generate()
+    maze.display()
