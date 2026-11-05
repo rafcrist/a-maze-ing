@@ -40,42 +40,42 @@ class MazeConfig:
             with open(filename, mode="r", encoding="utf-8") as file:
                 """open file and verify """
                 for line_num, line in enumerate(file, start=1):
-                    stripped_line: str = line.strip()
+                    current_line: str = line.strip()
                     
-                    if not stripped_line or stripped_line.startswith("#"):
+                    if not current_line or current_line.startswith("#"):
                         continue
 
-                    if "=" not in stripped_line:
-                        raise ConfigError(f"Invalid syntax on line {line_num}:\n    {line.strip()}")
+                    if "=" not in current_line:
+                        raise ConfigError(f"SintaxError on line {line_num}:\n    {line.strip()}")
 
-                    key, value = stripped_line.split("=", 1)
-                    clean_key = key.strip().upper()
-                    clean_val = value.strip()
+                    key, value = current_line.split("=", 1)
+                    current_key = key.strip().upper()
+                    current_value = value.strip()
 
                     try:
-                        if clean_key == "WIDTH":
-                            width = int(clean_val)
+                        if current_key == "WIDTH":
+                            width = int(current_value)
                             has_width = True
-                        elif clean_key == "HEIGHT":
-                            height = int(clean_val)
+                        elif current_key == "HEIGHT":
+                            height = int(current_value)
                             has_height = True
-                        elif clean_key == "OUTPUT_FILE":
-                            output_file = clean_val
+                        elif current_key == "OUTPUT_FILE":
+                            output_file = current_value
                             has_output = True
-                        elif clean_key == "PERFECT":
-                            perfect = """_parse_bool(clean_val)"""
+                        elif current_key == "PERFECT":
+                            perfect = _parse_bool(current_value, line, line_num)
                             has_perfect = True
-                        elif clean_key == "ENTRY":
-                            """entry = _parse_coords(clean_val)"""
+                        elif current_key == "ENTRY":
+                            """entry = _parse_coords(current_value)"""
                             has_entry = True
-                        elif clean_key == "EXIT":
-                            """exit_pos = _parse_coords(clean_val)"""
+                        elif current_key == "EXIT":
+                            """exit_pos = _parse_coords(current_value)"""
                             has_exit = True
-                        elif clean_key == "SEED":
-                            seed = int(clean_val)
+                        elif current_key == "SEED":
+                            seed = int(current_value)
                     except ValueError as err:
                         raise ConfigError(
-                            f"Value error on line {line_num} for key '{clean_key}': {err}"
+                            f"Value error on line {line_num} for key '{current_key}': {err}"
                         ) from err
 
             if not (has_width and has_height and has_entry and has_exit and has_output and has_perfect):
@@ -98,6 +98,17 @@ class MazeConfig:
         except OSError as err:
             raise ConfigError(f"FileError: '{filename}' : {err}")
 
+
+    def _parse_bool(value: str) -> bool:
+        """Converts string to boolean."""
+        """normalize value for not case sensitive read"""
+        normalized_value = value.strip().lower()
+
+        if normalized_value == "true":
+            return True
+        if normalized_value == "false":
+            return False
+        raise ValueError(f"Invalid boolean value: '{value}' (expected True or False)")
 
 if __name__ == "__main__":
     print("=== A testar o Parser de Configuração (Card 02) ===")
