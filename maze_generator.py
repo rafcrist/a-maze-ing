@@ -1,3 +1,5 @@
+
+
 class MazeGenerator:
     """Creates the base structure for a maze and validates cell access."""
 
@@ -38,3 +40,42 @@ class MazeGenerator:
         if (result):
             return (True)
         return (False)
+
+    def remove_wall(self, x: int, y: int, wall: int) -> None:
+        if not (self.is_valid_position(x, y)):
+            return
+        if wall == self.NORTH and y == 0:
+            return
+        if wall == self.SOUTH and y == self.height - 1:
+            return
+        if wall == self.WEST and x == 0:
+            return
+        if wall == self.EAST and x == self.width - 1:
+            return
+        cell = self.get_cell(x, y)
+        cell = cell & ~wall
+        self.grid[y][x] = cell
+
+        if (wall == self.EAST):
+            nx = x + 1
+            ny = y
+            if (self.is_valid_position(nx, ny)):
+                self.grid[ny][nx] = self.grid[ny][nx] & ~self.WEST
+
+        elif (wall == self.WEST):
+            nx = x - 1
+            ny = y
+            if (self.is_valid_position(nx, ny)):
+                self.grid[ny][nx] = self.grid[ny][nx] & ~self.EAST
+
+        elif (wall == self.NORTH):
+            nx = x
+            ny = y - 1
+            if (self.is_valid_position(nx, ny)):
+                self.grid[ny][nx] = self.grid[ny][nx] & ~self.SOUTH
+
+        elif (wall == self.SOUTH):
+            nx = x
+            ny = y + 1
+            if (self.is_valid_position(nx, ny)):
+                self.grid[ny][nx] = self.grid[ny][nx] & ~self.NORTH
