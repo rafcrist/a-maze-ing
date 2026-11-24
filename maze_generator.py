@@ -149,6 +149,22 @@ class MazeGenerator:
             rows.append(row)
         return (rows)
 
+    def write_output_file(
+        self,
+        filename: str,
+        entry: tuple[int, int],
+        exit: tuple[int, int],
+        path: list[str],
+    ) -> None:
+        """Write maze data using the required output format."""
+        with open(filename, "w", encoding="utf-8") as output:
+            for row in self.encode_hex_grid():
+                output.write(row + "\n")
+            output.write("\n")
+            output.write(f"{entry[0]},{entry[1]}\n")
+            output.write(f"{exit[0]},{exit[1]}\n")
+            output.write(" ".join(path) + "\n")
+
     def display(self) -> None:
         """Display the maze using ASCII characters."""
         for y in range(self.height):
