@@ -135,6 +135,20 @@ class MazeGenerator:
             else:
                 stack.pop()
 
+    def encode_cell(self, x: int, y: int) -> str:
+        """Encode a cell's wall bitmask as one hexadecimal digit."""
+        return (format(self.get_cell(x, y), "X"))
+
+    def encode_hex_grid(self) -> list[str]:
+        """Encode the full maze grid as hexadecimal rows."""
+        rows: list[str] = []
+        for y in range(self.height):
+            row = ""
+            for x in range(self.width):
+                row += self.encode_cell(x, y)
+            rows.append(row)
+        return (rows)
+
     def display(self) -> None:
         """Display the maze using ASCII characters."""
         for y in range(self.height):
@@ -155,6 +169,7 @@ class MazeGenerator:
 
             print(side + "|")
         print("+" + "---+" * self.width)
+
 
 if __name__ == "__main__":
     maze = MazeGenerator(10, 10, seed=100)
