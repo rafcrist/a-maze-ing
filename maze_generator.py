@@ -1,4 +1,5 @@
 import random
+from collections import deque
 
 
 class MazeGenerator:
@@ -186,8 +187,69 @@ class MazeGenerator:
             print(side + "|")
         print("+" + "---+" * self.width)
 
+    def solve(self, entry: tuple[int, int],
+              exit: tuple[int, int]) -> list[str]:
+        directions = [
+            (0, -1, self.NORTH),
+            (1, 0, self.EAST),
+            (0, 1, self.SOUTH),
+            (-1, 0, self.WEST)
+        ]
+        queue = deque([entry])
+        visited = {entry}
+        parents: dict[tuple[int, int], tuple[int, int]] = {}
+        while (queue):
+            x, y = queue.popleft()
+            if ((x, y) == exit):
+                break
+            for dx, dy, wall in directions:
+                nx = x + dx
+                ny = y + dy
+                if (self.is_valid_position(nx, ny)
+                        and not self.has_wall(x, y, wall)
+                        and (nx, ny) not in visited):
+                    queue.append((nx, ny))
+                    visited.add((nx, ny))
+                    parents[(nx, ny)] = x, y
+        if not (exit in visited):
+            return ([])
+
+        path: list[str] = []
+        current = exit
+        while (current != entry):
+            previous = parents[current]
+
+            cx, cy = current
+            px, py = previous
+
+            dx = cx - px
+            dy = cy - py
+            if (dy == -1):
+                path.append("N")
+            elif (dy == 1):
+                path.append("S")
+            elif (dx == -1):
+                path.append("W")
+            elif (dx == 1):
+                path.append("E")
+            current = previous
+        path.reverse()
+        return (path)
+
 
 if __name__ == "__main__":
-    maze = MazeGenerator(10, 10, seed=100)
+    maze = MazeGenerator(5, 5, seed=100)
     maze.generate()
     maze.display()
+
+    path = maze.solve((0, 0), (4, 4))
+
+    print("Shortest path:", path)
+    print("Total moves:", len(path))
+
+    print(maze.solve((0, 0), (0, 0)))
+    print(maze.solve((0, 0), (1, 0)))
+    print(maze.solve((4, 4), (0, 0)))
+
+    closed_maze = MazeGenerator(5, 5)
+    print(closed_maze.solve((0, 0), (4, 4)))
