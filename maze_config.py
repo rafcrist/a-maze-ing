@@ -122,8 +122,12 @@ class MazeConfig:
 
     def __repr__(self) -> str:
         return (
-            f"MazeConfig(width={self._width}, height={self._height}, "
-            f"entry={self._entry}, exit={self._exit}, "
-            f"output_file={self._output_file!r}, "
-            f"perfect={self._perfect}, seed={self._seed})"
+            f"\n=== MazeConfig ==="
+            f"\n width={self._width}"
+            f"\n height={self._height}"
+            f"\n entry={self._entry}"
+            f"\n exit={self._exit}"
+            f"\n output_file={self._output_file!r}"
+            f"\n perfect={self._perfect}"
+            f"\n seed={self._seed}"
         )

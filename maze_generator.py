@@ -1,3 +1,5 @@
+import random
+from collections import deque
 
 
 class MazeGenerator:
@@ -9,10 +11,12 @@ class MazeGenerator:
     WEST = 8
     ALL_WALLS = NORTH | EAST | SOUTH | WEST
 
-    def __init__(self, width: int, height: int) -> None:
+    def __init__(self, width: int, height: int,
+                 seed: int | None = None) -> None:
         """Initialize the maze with width, height, and all walls closed."""
         self.width = width
         self.height = height
+        self.rng = random.Random(seed)
 
         self.grid: list[list[int]] = []
         for _ in range(self.height):
@@ -79,3 +83,173 @@ class MazeGenerator:
             ny = y + 1
             if (self.is_valid_position(nx, ny)):
                 self.grid[ny][nx] = self.grid[ny][nx] & ~self.NORTH
+
+    def generate(self) -> None:
+        visited = {(0, 0)}
+        stack = [(0, 0)]
+
+        while (stack):
+            x, y = stack[-1]
+            neighbors = []
+
+            # East
+            nx = x + 1
+            ny = y
+            if (self.is_valid_position(nx, ny)
+               and (nx, ny) not in visited):
+                neighbors.append((nx, ny))
+
+            # West
+            nx = x - 1
+            ny = y
+            if (self.is_valid_position(nx, ny)
+               and (nx, ny) not in visited):
+                neighbors.append((nx, ny))
+
+            # North
+            nx = x
+            ny = y - 1
+            if (self.is_valid_position(nx, ny)
+               and (nx, ny) not in visited):
+                neighbors.append((nx, ny))
+
+            # South
+            nx = x
+            ny = y + 1
+            if (self.is_valid_position(nx, ny)
+               and (nx, ny) not in visited):
+                neighbors.append((nx, ny))
+
+            if (neighbors):
+                next_cell = self.rng.choice(neighbors)
+                nx, ny = next_cell
+                visited.add(next_cell)
+                stack.append(next_cell)
+                if (nx == x + 1):
+                    self.remove_wall(x, y, self.EAST)
+                elif (nx == x - 1):
+                    self.remove_wall(x, y, self.WEST)
+                elif (ny == y + 1):
+                    self.remove_wall(x, y, self.SOUTH)
+                elif (ny == y - 1):
+                    self.remove_wall(x, y, self.NORTH)
+            else:
+                stack.pop()
+
+    def encode_cell(self, x: int, y: int) -> str:
+        """Encode a cell's wall bitmask as one hexadecimal digit."""
+        return (format(self.get_cell(x, y), "X"))
+
+    def encode_hex_grid(self) -> list[str]:
+        """Encode the full maze grid as hexadecimal rows."""
+        rows: list[str] = []
+        for y in range(self.height):
+            row = ""
+            for x in range(self.width):
+                row += self.encode_cell(x, y)
+            rows.append(row)
+        return (rows)
+
+    def write_output_file(
+        self,
+        filename: str,
+        entry: tuple[int, int],
+        exit: tuple[int, int],
+        path: list[str],
+    ) -> None:
+        """Write maze data using the required output format."""
+        with open(filename, "w", encoding="utf-8") as output:
+            for row in self.encode_hex_grid():
+                output.write(row + "\n")
+            output.write("\n")
+            output.write(f"{entry[0]},{entry[1]}\n")
+            output.write(f"{exit[0]},{exit[1]}\n")
+            output.write(" ".join(path) + "\n")
+
+    def display(self) -> None:
+        """Display the maze using ASCII characters."""
+        for y in range(self.height):
+            top = ""
+            for x in range(self.width):
+                if self.has_wall(x, y, self.NORTH):
+                    top += "+---"
+                else:
+                    top += "+   "
+            print(top + "+")
+
+            side = ""
+            for x in range(self.width):
+                if self.has_wall(x, y, self.WEST):
+                    side += "|   "
+                else:
+                    side += "    "
+
+            print(side + "|")
+        print("+" + "---+" * self.width)
+
+    def solve(self, entry: tuple[int, int],
+              exit: tuple[int, int]) -> list[str]:
+        directions = [
+            (0, -1, self.NORTH),
+            (1, 0, self.EAST),
+            (0, 1, self.SOUTH),
+            (-1, 0, self.WEST)
+        ]
+        queue = deque([entry])
+        visited = {entry}
+        parents: dict[tuple[int, int], tuple[int, int]] = {}
+        while (queue):
+            x, y = queue.popleft()
+            if ((x, y) == exit):
+                break
+            for dx, dy, wall in directions:
+                nx = x + dx
+                ny = y + dy
+                if (self.is_valid_position(nx, ny)
+                        and not self.has_wall(x, y, wall)
+                        and (nx, ny) not in visited):
+                    queue.append((nx, ny))
+                    visited.add((nx, ny))
+                    parents[(nx, ny)] = x, y
+        if not (exit in visited):
+            return ([])
+
+        path: list[str] = []
+        current = exit
+        while (current != entry):
+            previous = parents[current]
+
+            cx, cy = current
+            px, py = previous
+
+            dx = cx - px
+            dy = cy - py
+            if (dy == -1):
+                path.append("N")
+            elif (dy == 1):
+                path.append("S")
+            elif (dx == -1):
+                path.append("W")
+            elif (dx == 1):
+                path.append("E")
+            current = previous
+        path.reverse()
+        return (path)
+
+
+if __name__ == "__main__":
+    maze = MazeGenerator(5, 5, seed=100)
+    maze.generate()
+    maze.display()
+
+    path = maze.solve((0, 0), (4, 4))
+
+    print("Shortest path:", path)
+    print("Total moves:", len(path))
+
+    print(maze.solve((0, 0), (0, 0)))
+    print(maze.solve((0, 0), (1, 0)))
+    print(maze.solve((4, 4), (0, 0)))
+
+    closed_maze = MazeGenerator(5, 5)
+    print(closed_maze.solve((0, 0), (4, 4)))
