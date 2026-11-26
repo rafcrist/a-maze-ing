@@ -41,8 +41,8 @@ class MazeGenerator:
                 or self.height < pattern_height + 2):
             return (set())
 
-        start_x = (self.width - pattern_width) // 2
-        start_y = (self.height - pattern_height) // 2
+        start_x = self.width // 2 - pattern_width // 2
+        start_y = self.height // 2 - pattern_height // 2
         cells: set[tuple[int, int]] = set()
         for y, row in enumerate(mask):
             for x, char in enumerate(row):
