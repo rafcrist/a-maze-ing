@@ -1,4 +1,5 @@
 import random
+import sys
 from collections import deque
 
 
@@ -22,6 +23,32 @@ class MazeGenerator:
         for _ in range(self.height):
             line = [self.ALL_WALLS] * self.width
             self.grid.append(line)
+
+        self.pattern_cells = self.create_42_pattern()
+
+    def create_42_pattern(self) -> set[tuple[int, int]]:
+        """Return the centered coordinates of the closed 42 cells."""
+        mask = (
+            "#.#.###",
+            "#.#...#",
+            "###.###",
+            "..#.#..",
+            "..#.###",
+        )
+        pattern_width = len(mask[0])
+        pattern_height = len(mask)
+        if (self.width < pattern_width + 2
+                or self.height < pattern_height + 2):
+            return (set())
+
+        start_x = self.width // 2 - pattern_width // 2
+        start_y = self.height // 2 - pattern_height // 2
+        cells: set[tuple[int, int]] = set()
+        for y, row in enumerate(mask):
+            for x, char in enumerate(row):
+                if (char == "#"):
+                    cells.add((start_x + x, start_y + y))
+        return (cells)
 
     def is_valid_position(self, x: int, y: int) -> bool:
         """Check if the given position is inside the maze."""
@@ -56,6 +83,18 @@ class MazeGenerator:
             return
         if wall == self.EAST and x == self.width - 1:
             return
+        offsets = {
+            self.NORTH: (0, -1),
+            self.EAST: (1, 0),
+            self.SOUTH: (0, 1),
+            self.WEST: (-1, 0),
+        }
+        if (wall not in offsets):
+            return
+        dx, dy = offsets[wall]
+        if ((x, y) in self.pattern_cells
+                or (x + dx, y + dy) in self.pattern_cells):
+            return
         cell = self.get_cell(x, y)
         cell = cell & ~wall
         self.grid[y][x] = cell
@@ -85,7 +124,12 @@ class MazeGenerator:
                 self.grid[ny][nx] = self.grid[ny][nx] & ~self.NORTH
 
     def generate(self) -> None:
+        if (not self.pattern_cells):
+            print("Error: maze too small for the 42 pattern.",
+                  file=sys.stderr)
+
         visited = {(0, 0)}
+        visited.update(self.pattern_cells)
         stack = [(0, 0)]
 
         while (stack):
