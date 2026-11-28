@@ -1,4 +1,5 @@
 """Terminal renderer for bitmask-based maze grids using Unicode box-drawing."""
+from maze_config import MazeConfig
 
 
 class TerminalRenderer:
@@ -8,6 +9,10 @@ class TerminalRenderer:
     EAST: int = 2
     SOUTH: int = 4
     WEST: int = 8
+
+    EMPTY_CELL: str = "   "
+    ENTRY_SYMBOL: str = " E "
+    EXIT_SYMBOL: str = " X "
 
     # Vertex bitmask: UP=1, RIGHT=2, DOWN=4, LEFT=8
     CORNERS: dict[int, str] = {
@@ -29,27 +34,30 @@ class TerminalRenderer:
         15: "┼",
     }
 
-    def __init__(self, maze: list[list[int]]) -> None:
-        """Initialize the renderer with a 2D matrix of wall bitmasks.
+    def __init__(self, maze: list[list[int]], maze_config: MazeConfig) -> None:
+        """Initialize the renderer with a maze grid and its configuration.
 
         Args:
             maze: 2D list of integers where each cell encodes its walls
                 using bits: NORTH=1, EAST=2, SOUTH=4, WEST=8.
+            maze_config: Validated maze configuration containing dimensions,
+                entry, and exit coordinates.
 
         Raises:
-            ValueError: If maze rows do not all have the same width.
+            ValueError: If maze dimensions do not match maze_config.
         """
-        if maze:
-            expected_width = len(maze[0])
-            for row in maze:
-                if len(row) != expected_width:
-                    raise ValueError("All maze rows must have the same width.")
-            self.width = expected_width
-        else:
-            self.width = 0
+        if len(maze) != maze_config.height or any(
+            len(row) != maze_config.width for row in maze
+        ):
+            raise ValueError(
+                "Maze grid dimensions do not match maze_config."
+            )
 
         self.maze = maze
-        self.height = len(maze)
+        self.height = maze_config.height
+        self.width = maze_config.width
+        self.entry: tuple[int, int] = maze_config.entry
+        self.exit: tuple[int, int] = maze_config.exit
 
     def _has_wall(self, x: int, y: int, wall: int) -> bool:
         """Return whether the cell at (x, y) has the specified wall."""
@@ -92,7 +100,11 @@ class TerminalRenderer:
 
     def _cell_content(self, x: int, y: int) -> str:
         """Return the 3-character interior content of the cell at (x, y)."""
-        return "   "
+        if (x, y) == self.entry:
+            return self.ENTRY_SYMBOL
+        if (x, y) == self.exit:
+            return self.EXIT_SYMBOL
+        return self.EMPTY_CELL
 
     def _render_horizontal_border(self, vy: int) -> str:
         """Build a horizontal border line for vertex row vy."""
@@ -132,12 +144,12 @@ class TerminalRenderer:
 
 
 if __name__ == "__main__":
-    # Fake 3x3 maze for standalone testing (independent of MazeGenerator):
-    # NORTH=1, EAST=2, SOUTH=4, WEST=8
-    fake_maze: list[list[int]] = [
-        [13, 1, 3],
-        [9, 6, 10],
-        [12, 5, 6],
-    ]
-    renderer = TerminalRenderer(fake_maze)
+    from maze_generator import MazeGenerator
+
+    maze_config = MazeConfig(10, 10, (0, 0), (4, 4), "output.txt", True)
+    generator = MazeGenerator(
+        maze_config.width, maze_config.height, seed=maze_config.seed
+    )
+    generator.generate()
+    renderer = TerminalRenderer(generator.grid, maze_config)
     renderer.display()
